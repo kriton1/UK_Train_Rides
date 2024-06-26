@@ -1,0 +1,46 @@
+table DimRoute
+	lineageTag: 714acc1a-5b19-4eaa-ac59-2283c44cf952
+
+	column Route
+		dataType: string
+		lineageTag: 7ceb54e4-8518-4dd0-9ece-1c9c2b9b3e90
+		summarizeBy: none
+		sourceColumn: Route
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Journey Route'
+		dataType: string
+		lineageTag: 760a0a2c-9200-402c-80a6-3f52359fdbec
+		dataCategory: Address
+		summarizeBy: none
+		sourceColumn: Journey Route
+
+		annotation SummarizationSetBy = Automatic
+
+	column Direction
+		dataType: string
+		lineageTag: a8277c2c-ff1c-482c-93b6-40ca9dd7b202
+		summarizeBy: none
+		sourceColumn: Direction
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimRoute = m
+		mode: import
+		source =
+				let
+				    Source = Railway,
+				    #"Removed Other Columns" = Table.SelectColumns(Source,{"Route"}),
+				    #"Removed Duplicates" = Table.Distinct(#"Removed Other Columns"),
+				    SplitColumn = Table.SplitColumn(#"Removed Duplicates", "Route", Splitter.SplitTextByDelimiter(" - ", QuoteStyle.Csv), {"Part1", "Part2"}),
+				    AddSortedRoute = Table.AddColumn(SplitColumn, "Journey Route", each Text.Combine(List.Sort({[Part1], [Part2]}), " - "), type text),
+				    AddDirectionColumn = Table.AddColumn(AddSortedRoute, "Direction", each if Text.Start([Journey Route], Text.Length([Part1])) = [Part1] then "To" else "Fro", type text),
+				    #"Merged Columns" = Table.CombineColumns(AddDirectionColumn,{"Part1", "Part2"},Combiner.CombineTextByDelimiter(" - ", QuoteStyle.None),"Route")
+				in
+				    #"Merged Columns"
+
+	annotation PBI_ResultType = Table
+

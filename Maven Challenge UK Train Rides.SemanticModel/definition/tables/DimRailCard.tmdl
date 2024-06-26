@@ -1,0 +1,25 @@
+table DimRailCard
+	lineageTag: 05913622-748f-4dde-82b9-df6d4bba9c46
+
+	column Railcard
+		dataType: string
+		lineageTag: f361b537-a17e-443d-bc4a-e573406e9eea
+		summarizeBy: none
+		sourceColumn: Railcard
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimRailCard = m
+		mode: import
+		source =
+				let
+				    Source = Railway,
+				    #"Removed Other Columns" = Table.SelectColumns(Source,{"Railcard"}),
+				    #"Removed Duplicates" = Table.Distinct(#"Removed Other Columns")
+				in
+				    #"Removed Duplicates"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

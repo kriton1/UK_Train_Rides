@@ -1,0 +1,1207 @@
+table _Measures
+	lineageTag: 9de6a2ca-f66a-4e57-8498-7cc90ab61324
+
+	measure Passengers =
+			
+			CALCULATE(COUNTROWS(Railway))
+		formatString: #,0
+		lineageTag: 2680a762-037e-484a-9ebb-1d046a35777e
+
+	measure 'Top Routes' = ```
+			
+			VAR _TopPassenger =
+			CALCULATE(
+			    [Passengers],
+			    KEEPFILTERS(
+			        TOPN(
+			            [Top Routes Value],
+			            ALLSELECTED(DimRoute[Route] ),
+			            CALCULATE([Passengers], ALLSELECTED(DimRoute[Direction])),
+			            DESC,
+			            [Passengers],
+			            DESC,
+			            DimRoute[Route],
+			            DESC
+			        )
+			    )
+			)
+			VAR _BottomPassenger=
+			CALCULATE(
+			    [Passengers],
+			    KEEPFILTERS(
+			        TOPN(
+			            [Top Routes Value],
+			            ALLSELECTED(DimRoute[Route]),
+			            CALCULATE([Passengers], ALLSELECTED(DimRoute[Direction])),
+			            ASC, 
+			            [Passengers],
+			            ASC,                    
+			            DimRoute[Route],
+			            ASC
+			        )
+			    )
+			)
+			VAR _TopSales =
+			CALCULATE(
+			    [Ticket Sales],
+			    KEEPFILTERS(
+			        TOPN(
+			            [Top Routes Value],
+			            ALLSELECTED(DimRoute[Route] ),
+			            CALCULATE([Ticket Sales], ALLSELECTED(DimRoute[Direction])),
+			            DESC,
+			            [Ticket Sales],
+			            DESC,
+			            DimRoute[Route],
+			            DESC
+			        )
+			    )
+			)
+			
+			VAR _BottomSales=
+			CALCULATE(
+			    [Ticket Sales],
+			    KEEPFILTERS(
+			        TOPN(
+			            [Top Routes Value],
+			            ALLSELECTED(DimRoute[Route]),
+			            CALCULATE([Ticket Sales], ALLSELECTED(DimRoute[Direction])),
+			            ASC, 
+			            [Ticket Sales],
+			            ASC,                    
+			            DimRoute[Route],
+			            ASC
+			        )
+			    )
+			)
+			VAR _TopRevenue =
+			CALCULATE(
+			    [Average Revenue per Trip],
+			    KEEPFILTERS(
+			        TOPN(
+			            [Top Routes Value],
+			            ALLSELECTED(DimRoute[Route] ),
+			            CALCULATE([Average Revenue per Trip], ALLSELECTED(DimRoute[Direction])),
+			            DESC,
+			            [Average Revenue per Trip],
+			            DESC,
+			            DimRoute[Route],
+			            DESC
+			        )
+			    )
+			)
+			
+			VAR _BottomRevenue=
+			CALCULATE(
+			    [Average Revenue per Trip],
+			    KEEPFILTERS(
+			        TOPN(
+			            [Top Routes Value],
+			            ALLSELECTED(DimRoute[Route]),
+			            CALCULATE([Average Revenue per Trip], ALLSELECTED(DimRoute[Direction])),
+			            ASC, 
+			            [Average Revenue per Trip],
+			            ASC,                    
+			            DimRoute[Route],
+			            ASC
+			        )
+			    )
+			)
+			VAR _TopTrips =
+			CALCULATE(
+			    [Number of Trips],
+			    KEEPFILTERS(
+			        TOPN(
+			            [Top Routes Value],
+			            ALLSELECTED(DimRoute[Route] ),
+			            CALCULATE([Number of Trips], ALLSELECTED(DimRoute[Direction])),
+			            DESC,
+			            [Number of Trips],
+			            DESC,
+			            DimRoute[Route],
+			            DESC
+			        )
+			    )
+			)
+			
+			VAR _BottomTrips=
+			CALCULATE(
+			    [Number of Trips],
+			    KEEPFILTERS(
+			        TOPN(
+			            [Top Routes Value],
+			            ALLSELECTED(DimRoute[Route]),
+			            CALCULATE([Number of Trips], ALLSELECTED(DimRoute[Direction])),
+			            ASC, 
+			            [Number of Trips],
+			            ASC,                    
+			            DimRoute[Route],
+			            ASC
+			        )
+			    )
+			)
+			VAR _Result =
+			    SWITCH(
+			        TRUE(),
+			        SELECTEDVALUE(TopBottom[Order]) = "Top" && SELECTEDVALUE('Rank Table'[Rank Option]) ="Number of Passengers", _TopPassenger,
+			        SELECTEDVALUE(TopBottom[Order]) = "Bottom" && SELECTEDVALUE('Rank Table'[Rank Option]) ="Number of Passenger", _BottomPassenger,
+			        SELECTEDVALUE(TopBottom[Order]) = "Top" && SELECTEDVALUE('Rank Table'[Rank Option]) ="Ticket Sales", _TopSales,
+			        SELECTEDVALUE(TopBottom[Order]) = "Bottom" && SELECTEDVALUE('Rank Table'[Rank Option]) ="Ticket Sales", _BottomSales,
+			        SELECTEDVALUE(TopBottom[Order]) = "Top" && SELECTEDVALUE('Rank Table'[Rank Option]) ="Avg Revenue per Trip", _TopRevenue,
+			        SELECTEDVALUE(TopBottom[Order]) = "Bottom" && SELECTEDVALUE('Rank Table'[Rank Option]) ="Avg Revenue per Trip", _BottomRevenue,
+			       SELECTEDVALUE(TopBottom[Order]) = "Top" && SELECTEDVALUE('Rank Table'[Rank Option]) ="Number of Trips", _TopTrips,
+			       _BottomTrips
+			    )
+			
+			RETURN
+			    _Result
+			```
+		lineageTag: 287539a1-9c78-4e5d-a1a8-134ee4c93249
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Peak Travel Times' =
+			
+			CALCULATE(
+			    [Passengers],
+			    USERELATIONSHIP('Time'[Time to the Minute], Railway[Departure Time])
+			)
+		formatString: 0
+		lineageTag: 3eec4a8a-a38e-496e-a4c9-34b5f7a5ecb4
+
+	measure 'Peak Travel Times Conditional Formatting' = ```
+			
+			VAR TimeSlotRanking = 
+			CALCULATE(RANKX(
+			    ALLSELECTED('Time'[30 mins time slot]),
+			    [Peak Travel Times],
+			    ,
+			    DESC
+			))
+			RETURN
+			IF(TimeSlotRanking <= 3, "Red", "LightBlue")
+			
+			```
+		lineageTag: 9996f139-37c6-46fb-aeb2-35cf6f1f3778
+
+	measure 'Cancellation Percentage' =
+			
+			VAR _Result =
+			    DIVIDE(
+			       [Cancelled Trips],
+			        [Number of Trips],
+			        0
+			    )
+			RETURN
+			    IF(ISBLANK(_Result), 0, _Result)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 76983613-ff94-4d72-aec8-85b0bef68cda
+
+	measure 'Top Cancelled Routes' = ```
+			
+			CALCULATE(
+			    [Cancellation Percentage],
+			    KEEPFILTERS(
+			        TOPN(
+			            [Top Routes Value],
+			            ALLSELECTED(DimRoute[Journey Route]),
+			            [Cancellation Percentage],
+			            DESC,
+			            DimRoute[Journey Route],
+			            DESC
+			        )
+			    )
+			)
+			
+			```
+		formatString: 0%;-0%;0%
+		lineageTag: 57e788ea-3dbc-4eed-9ee7-fc92e723705f
+
+	measure 'Delayed Percentage' =
+			
+			VAR _Result =
+			    DIVIDE(
+			        [Delayed Trips],
+			        [Number of Trips],
+			        0
+			    )
+			RETURN
+			    IF(ISBLANK(_Result), 0, _Result)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 38643d20-7fc8-4e05-b572-e3919fe2c211
+
+	measure 'Top Delayed Routes' = ```
+			
+			CALCULATE(
+			    [Delayed Percentage],
+			    KEEPFILTERS(
+			        TOPN(
+			            [Top Routes Value],
+			            ALLSELECTED(DimRoute[Route]),
+			            [Delayed Percentage],
+			            DESC,
+			            DimRoute[Route],
+			            DESC
+			        )
+			    )
+			)
+			
+			```
+		formatString: 0%;-0%;0%
+		lineageTag: 595e788f-8d87-4c2f-96d6-01638ba30acc
+
+	measure 'Average Number of Trips by Day of Week' =
+			
+			AVERAGEX(
+			    VALUES('Date'[Date]),
+			    [Passengers]
+			)
+		formatString: 0
+		lineageTag: c4b790da-a3c4-4b83-b193-e782488c2b92
+
+		annotation PBI_FormatHint = {"isDecimal":true}
+
+	measure 'Average Number of Trips by Time' =
+			
+			AVERAGEX(
+			    VALUES('Time'[Time to the Minute]),
+			    [Passengers]
+			)
+		lineageTag: cd4c2fe2-acd5-4e99-90c8-33f061d5aa20
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Ticket Sales' =
+			
+			CALCULATE(SUM(Railway[Price]))
+		formatString: "£"#,0.00;-"£"#,0.00;"£"#,0.00
+		lineageTag: 09ceb4c5-08c1-4a1f-9feb-acf605d75ed5
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-GB"}
+
+	measure 'Total Ticket Refunded' =
+			
+			CALCULATE(
+			    [Ticket Sales],
+			    DimJourney[Refund] = "Yes"
+			)
+		formatString: "£"#,0.00;-"£"#,0.00;"£"#,0.00
+		lineageTag: 8e9c83cc-3e20-4b70-b1ea-ab7583ce79bd
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-GB"}
+
+	measure 'Total Ticket Net' =
+			
+			[Ticket Sales] - [Total Ticket Refunded]
+		formatString: "£"#,0.00;-"£"#,0.00;"£"#,0.00
+		lineageTag: 43b6b411-e2af-425e-9955-427c592c7fc3
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-GB"}
+
+	measure 'Average Delay Time' =
+			
+			VAR _TripTable =
+			   CALCULATETABLE(
+			        SUMMARIZE(
+			            FILTER(Railway, Railway[Late Arrival Duration] >0),
+			            Railway[Route],
+			            Railway[Date of Journey],
+			            Railway[Departure Time],
+			            "DelayTime", MAX(Railway[Late Arrival Duration])
+			        ),
+			        DimJourney[Journey Status] = "Delayed"
+			    )
+			VAR _Result = AVERAGEX(_TripTable,[DelayTime])
+			
+			RETURN
+			    IF(ISBLANK(_Result), 0, _Result)
+		lineageTag: b8da3aee-4150-4dcb-b017-34520244b2ca
+
+		formatStringDefinition = "0.0 minutes"
+
+	measure 'Cancelled Trips' =
+			
+			VAR _TripTable =
+			   CALCULATETABLE(
+			        SUMMARIZE(
+			            Railway,
+			            Railway[Route],
+			            Railway[Date of Journey],
+			            Railway[Departure Time],
+			            "CancelledTrips", COUNTROWS(Railway)
+			        ),
+			        DimJourney[Journey Status] = "Cancelled"
+			    )
+			VAR _Result = COUNTROWS(_TripTable)
+			
+			RETURN
+			    IF(ISBLANK(_Result), 0, _Result)
+		formatString: 0
+		lineageTag: 6dd6cd97-d2e1-4c0e-90d4-397c4b207099
+
+	measure 'Delayed Trips' =
+			
+			VAR _TripTable =
+			   CALCULATETABLE(
+			        SUMMARIZE(
+			            Railway,
+			            Railway[Route],
+			            Railway[Date of Journey],
+			            Railway[Departure Time],
+			            "DelayedTrips", COUNTROWS(Railway)
+			        ),
+			        DimJourney[Journey Status] = "Delayed"
+			    )
+			VAR _Result = COUNTROWS(_TripTable)
+			
+			RETURN
+			    IF(ISBLANK(_Result), 0, _Result)
+		formatString: #,0
+		lineageTag: 795a85a6-0916-4423-8c88-95d9b3eadfc7
+
+	measure 'PM Passengers' =
+			
+			CALCULATE(
+			    [Passengers],
+			    DATEADD('Date'[Date], -1,MONTH))
+		formatString: #,0
+		lineageTag: 6031f9a8-35c4-4da0-bae2-c7b150f2dfd2
+
+	measure 'Percentage Difference (Passenger)' =
+			
+			VAR up_arrow = UNICHAR(129137)
+			VAR down_arrow = UNICHAR(129139)
+			VAR _current = [Passengers]
+			VAR _previous = [PM Passengers]
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			    IF( _growth <0, FORMAT(_growth, "0.00%"), FORMAT(_growth, "0.00%"))
+		displayFolder: Percentage Difference
+		lineageTag: 84882774-b32c-409e-8236-3acace3422de
+
+	measure 'Percentage Difference (Cancelled Trips)' =
+			
+			VAR up_arrow = UNICHAR(129137)
+			VAR down_arrow = UNICHAR(129139)
+			VAR _current = [Cancelled Trips]
+			VAR _previous = CALCULATE([Cancelled Trips], DATEADD('Date'[Date], -1,MONTH))
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			    IF( _growth <0, down_arrow & " " &  FORMAT(_growth, "0.00%"), up_arrow & " " &  FORMAT(_growth, "0.00%"))
+		displayFolder: Percentage Difference
+		lineageTag: aa6c955f-27ce-420a-95f4-7e6deaa6796c
+
+	measure 'Percentage Difference (Delayed Trips)' =
+			
+			VAR up_arrow = UNICHAR(129137)
+			VAR down_arrow = UNICHAR(129139)
+			VAR _current = [Delayed Trips]
+			VAR _previous = CALCULATE([Delayed Trips], DATEADD('Date'[Date], -1,MONTH))
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			    IF( _growth <0, down_arrow & " " &  FORMAT(_growth, "0.00%"), up_arrow & " " &  FORMAT(_growth, "0.00%"))
+		displayFolder: Percentage Difference
+		lineageTag: 91c1bf24-d44b-484a-b5a9-7a1bb23b4ba4
+
+	measure 'Percentage Difference (Delay Time)' =
+			
+			VAR up_arrow = UNICHAR(129137)
+			VAR down_arrow = UNICHAR(129139)
+			VAR _current = [Average Delay Time]
+			VAR _previous = CALCULATE([Average Delay Time], DATEADD('Date'[Date], -1,MONTH))
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			    IF( _growth <0, down_arrow & " " &  FORMAT(_growth, "0.00%"), up_arrow & " " &  FORMAT(_growth, "0.00%"))
+		displayFolder: Percentage Difference
+		lineageTag: b07266a1-b718-4d48-82ca-45423c1374b9
+
+	measure 'Passengers Refunded' =
+			
+			
+			CALCULATE(
+			    COUNTROWS(Railway),
+			    DimJourney[Refund] = "Yes"
+			)
+		formatString: #,0
+		lineageTag: 852b4598-d052-41e6-b011-5fa7ad9124f5
+
+	measure 'Percentage Difference (Refunded Journey)' =
+			
+			VAR up_arrow = UNICHAR(129137)
+			VAR down_arrow = UNICHAR(129139)
+			VAR _current = [Passengers Refunded]
+			VAR _previous = CALCULATE([Passengers Refunded], DATEADD('Date'[Date], -1,MONTH))
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			    IF( _growth <0, down_arrow & " " &  FORMAT(_growth, "0.00%"), up_arrow & " " &  FORMAT(_growth, "0.00%"))
+		displayFolder: Percentage Difference
+		lineageTag: 891129be-12f2-4c38-b301-85e470070ede
+
+	measure 'PM Ticket Sales' =
+			
+			CALCULATE(
+			    [Ticket Sales],
+			    DATEADD('Date'[Date], -1,MONTH)
+			)
+		formatString: "£"#,0.00;-"£"#,0.00;"£"#,0.00
+		lineageTag: bb5604c7-739c-444a-853c-1b93607787e1
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-GB"}
+
+	measure 'Percentage Difference (Ticket Sales)' =
+			
+			VAR up_arrow = UNICHAR(129137)
+			VAR down_arrow = UNICHAR(129139)
+			VAR _current = [Ticket Sales]
+			VAR _previous = CALCULATE([Ticket Sales], DATEADD('Date'[Date], -1,MONTH))
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			    IF( _growth <0, FORMAT(_growth, "0.00%"), FORMAT(_growth, "0.00%"))
+		displayFolder: Percentage Difference
+		lineageTag: f0b35933-e9fe-4c9f-82f7-1ab2a9236e1c
+
+	measure 'Percentage Difference (Refunded Sales)' =
+			
+			VAR up_arrow = UNICHAR(129137)
+			VAR down_arrow = UNICHAR(129139)
+			VAR _current = [Total Ticket Refunded]
+			VAR _previous = CALCULATE([Total Ticket Refunded], DATEADD('Date'[Date], -1,MONTH))
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			    IF( _growth <0, down_arrow & " " &  FORMAT(_growth, "0.00%"), up_arrow & " " &  FORMAT(_growth, "0.00%"))
+		displayFolder: Percentage Difference
+		lineageTag: 64e13c9c-90e0-4109-9c3e-0492fe8fcfc2
+
+	measure 'Percentage Difference (Net Sales)' =
+			
+			VAR up_arrow = UNICHAR(129137)
+			VAR down_arrow = UNICHAR(129139)
+			VAR _current = [Total Ticket Net]
+			VAR _previous = CALCULATE([Total Ticket Net], DATEADD('Date'[Date], -1,MONTH))
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			    IF( _growth <0, down_arrow & " " &  FORMAT(_growth, "0.00%"), up_arrow & " " &  FORMAT(_growth, "0.00%"))
+		displayFolder: Percentage Difference
+		lineageTag: 76570474-5a22-426a-9569-c4a118494b6a
+
+	measure 'Percentage Colour (Trips)' =
+			
+			VAR _current = [Passengers]
+			VAR _previous = [PM Passengers]
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			    IF( _growth <0, "red", "green")
+		displayFolder: Percentage Difference\Percentage Colour
+		lineageTag: c4bd59e8-8ed8-4163-ae9b-ab64b976aa79
+
+	measure 'Percentage Colour (Cancelled Trips)' =
+			
+			VAR _current = [Cancelled Trips]
+			VAR _previous = CALCULATE([Cancelled Trips], DATEADD('Date'[Date], -1,MONTH))
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			     IF( _growth <0, "red", "green")
+		displayFolder: Percentage Difference\Percentage Colour
+		lineageTag: cc0b4a8d-ae18-4d61-9827-c5b2fb1a3753
+
+	measure 'Percentage Colour (Delayed Trips)' =
+			VAR _current = [Delayed Trips]
+			VAR _previous = CALCULATE([Delayed Trips], DATEADD('Date'[Date], -1,MONTH))
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			     IF( _growth <0, "red", "green")
+		displayFolder: Percentage Difference\Percentage Colour
+		lineageTag: d433223e-e602-4675-aab6-c299f1f6cbf8
+
+	measure 'Percentage Colour (Delay Time)' =
+			VAR _current = [Average Delay Time]
+			VAR _previous = CALCULATE([Average Delay Time], DATEADD('Date'[Date], -1,MONTH))
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			     IF( _growth <0, "red", "green")
+		displayFolder: Percentage Difference\Percentage Colour
+		lineageTag: f76fe76d-6a5c-419f-b81b-97dbc9062db6
+
+	measure 'Percentage Colour (Refunded Journey)' =
+			VAR _current = [Passengers Refunded]
+			VAR _previous = CALCULATE([Passengers Refunded], DATEADD('Date'[Date], -1,MONTH))
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			     IF( _growth <0, "red", "green")
+		displayFolder: Percentage Difference\Percentage Colour
+		lineageTag: 99ff6026-162b-4a76-a989-dca5b81e70f5
+
+	measure 'Percentage Colour (Ticket Sales)' =
+			VAR _current = [Ticket Sales]
+			VAR _previous = CALCULATE([Ticket Sales], DATEADD('Date'[Date], -1,MONTH))
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			     IF( _growth <0, "red", "green")
+		displayFolder: Percentage Difference\Percentage Colour
+		lineageTag: 1b3040a9-b891-4e57-a2d7-6acd2e2f7cea
+
+	measure 'Percentage Colour (Refunded Sales)' =
+			VAR _current = [Total Ticket Refunded]
+			VAR _previous = CALCULATE([Total Ticket Refunded], DATEADD('Date'[Date], -1,MONTH))
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			     IF( _growth <0, "red", "green")
+		displayFolder: Percentage Difference\Percentage Colour
+		lineageTag: 79fdb720-91f5-420e-ac4c-8b70a5fc97cf
+
+	measure 'Percentage Colour (Net Sales)' =
+			VAR _current = [Total Ticket Net]
+			VAR _previous = CALCULATE([Total Ticket Net], DATEADD('Date'[Date], -1,MONTH))
+			VAR _growth = DIVIDE (_current - _previous, _previous,0)
+			RETURN
+			     IF( _growth <0, "red", "green")
+		displayFolder: Percentage Difference\Percentage Colour
+		lineageTag: 0f0d706a-8b75-4deb-9d8e-18197cf5383f
+
+	measure 'Popular Route Chart Title' =
+			
+			COMBINEVALUES(" ", SELECTEDVALUE(TopBottom[Order]),[Top Routes Value], "Routes Ranked According to", SELECTEDVALUE('Rank Table'[Rank Option]), "(includes Delayed and Cancelled Trips)")
+		lineageTag: 2d1f6e0b-bf2c-4063-9a70-2ae0b30c0dc2
+
+	measure 'Sales Label' =
+			
+			IF (
+			    [Ticket Sales]> [PM Ticket Sales],
+			    [Ticket Sales],
+			    [PM Ticket Sales]
+			)
+		formatString: 0
+		lineageTag: b554dd29-39d1-40d1-8dd4-20e1a916e280
+
+	measure 'Cancelled Route Chart Title' =
+			
+			COMBINEVALUES(" ", "Top",[Top Routes Value], "Routes with the Highest Number of Cancelled Trips")
+		lineageTag: 6717a0e8-153f-4888-8989-174f5183fc4e
+
+	measure 'Delayed Route Chart Title' =
+			
+			COMBINEVALUES(" ", "Top",[Top Routes Value], "Routes with the Highest Number of Delayed Trips")
+		lineageTag: e101ef37-43c1-49d3-a1e4-e6503ab92d0e
+
+	measure 'Pareto %' = ```
+			
+			// VAR _RankOption = SELECTEDVALUE('Rank Table'[Rank Option])
+			// VAR _Order = SELECTEDVALUE(TopBottom[Order])
+			// VAR _SelectedRoutes = ALLSELECTED(DimRoute[Route])
+			// VAR _RouteTable = ADDCOLUMNS(
+			//     _SelectedRoutes,
+			//     "Count", 
+			//     SWITCH(
+			//         _RankOption,
+			//         "Ticket Sales", [Ticket Sales],
+			//         "Number of Passengers", [Passengers],
+			//         "Number of Trips", [Number of Trips],
+			//         BLANK()
+			//     )
+			// )
+			// VAR _CurrentCount = SWITCH(
+			//     _RankOption,
+			//     "Ticket Sales", [Ticket Sales],
+			//     "Number of Passengers", [Passengers],
+			//     "Number of Trips", [Number of Trips],
+			//     BLANK()
+			// )
+			// VAR _CumulativeTable = FILTER(_RouteTable, [Count] >= _CurrentCount)
+			// VAR _CumulativeRouteCount = SUMX(_CumulativeTable, [Count])
+			// VAR _AllSelectedRouteCount = CALCULATE(
+			//     SWITCH(
+			//         _RankOption,
+			//         "Ticket Sales", [Ticket Sales],
+			//         "Number of Passengers", [Passengers],       
+			//         "Number of Trips",[Number of Trips],
+			//         BLANK()
+			//     ),
+			//     REMOVEFILTERS(DimRoute[Route])
+			// )
+			// VAR _Percentage = DIVIDE(_CumulativeRouteCount, _AllSelectedRouteCount,0)
+			// RETURN
+			// IF(_Order = "Top", _Percentage, BLANK())
+			
+			
+			VAR _RankOption = SELECTEDVALUE('Rank Table'[Rank Option])
+			VAR _Order = SELECTEDVALUE(TopBottom[Order])
+			VAR _SelectedRoutes = ALLSELECTED(DimRoute[Route])
+			VAR _CurrentRoute =SELECTEDVALUE(DimRoute[Route])
+			VAR _RouteTable = 
+			ADDCOLUMNS(
+			    _SelectedRoutes,
+			    "@Count", 
+			    SWITCH(
+			        _RankOption,
+			        "Ticket Sales", [Ticket Sales],
+			        "Number of Passengers", [Passengers],
+			        "Number of Trips", [Number of Trips],
+			        BLANK()
+			    ),
+			    "@Rank", 
+			    RANKX(
+			        _SelectedRoutes,
+			        SWITCH(
+			        _RankOption,
+			        "Ticket Sales", [Ticket Sales],
+			        "Number of Passengers", [Passengers],
+			        "Number of Trips", [Number of Trips],
+			        BLANK()
+			        )
+			    )
+			    +
+			    RANKX(
+			        _SelectedRoutes,
+			       DimRoute[Route]
+			    )/100000
+			)
+			VAR _SelectedRoutePosition = MAXX(FILTER(_RouteTable, DimRoute[Route] = _CurrentRoute), [@Rank])
+			VAR _CumulativeRouteCount = SUMX(FILTER(_RouteTable, [@Rank] <= _SelectedRoutePosition), [@Count])
+			VAR _AllSelectedRouteCount = 
+			CALCULATE(
+			    SWITCH(
+			        _RankOption,
+			        "Ticket Sales", [Ticket Sales],
+			        "Number of Passengers", [Passengers],       
+			        "Number of Trips",[Number of Trips],
+			        BLANK()
+			    ),
+			    REMOVEFILTERS(DimRoute[Route])
+			)
+			VAR _Percentage = DIVIDE(_CumulativeRouteCount, _AllSelectedRouteCount,0)
+			RETURN
+			IF(_Order = "Top", _Percentage, BLANK())
+			
+			
+			
+			```
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: bc162dcd-7141-4c2d-81d2-944c94be82fd
+
+	measure 'Pareto CF' = ```
+			
+			VAR _Order = SELECTEDVALUE(TopBottom[Order])
+			VAR _RankOption = SELECTEDVALUE('Rank Table'[Rank Option])
+			VAR _Threshold = [Threshold Value]
+			VAR _Route = SELECTEDVALUE(DimRoute[Route])
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    _Order = "Bottom" || _RankOption = "Avg Revenue per Trip", "#E3E9F8",
+			    NOT ISBLANK([Pareto %]) && [Pareto %] <= _Threshold, "#11183C",
+			    "#E3E9F8"
+			)
+			
+			
+			```
+		lineageTag: 26f07065-1015-48f5-8008-3afe90e15a97
+
+	measure 'Popular Chart Data Label' = ```
+			
+			  SWITCH(
+			        TRUE(),
+			        SELECTEDVALUE('Rank Table'[Rank Option]) ="Number of Passengers", "0,0 People",
+			        SELECTEDVALUE('Rank Table'[Rank Option]) ="Number of Trips", "0,0 Trips",
+			        "£,0"
+			    )
+			
+			```
+		lineageTag: fd91ce06-56a2-45f3-9747-bd02bd90364a
+
+	measure Label = IF([Ticket Sales] > [PM Ticket Sales], [Ticket Sales], [PM Ticket Sales])
+		formatString: "£"#,0;-"£"#,0;"£"#,0
+		lineageTag: b7360e2b-8161-40fc-8698-cad1d95fa0d7
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-GB"}
+
+	measure 'Sales Green Max' = IF([Ticket Sales] > [PM Ticket Sales], [Label])
+		formatString: 0
+		lineageTag: 42180540-ba0f-416a-9205-47da2e30dedc
+
+	measure 'Sales Red Max' = IF([Ticket Sales] < [PM Ticket Sales], [Label])
+		formatString: 0
+		lineageTag: 1424ad0d-43bb-455a-8af6-0765c613ccc6
+
+	measure 'Average Days Booked In Advance' = ```
+			
+			VAR _TotalDays =
+			    CALCULATE(
+			        SUMX(Railway,
+			            DATEDIFF('Railway'[Date of Purchase], Railway[Date of Journey],DAY)
+			        ),
+			        USERELATIONSHIP('Date'[Date], Railway[Date of Purchase]),
+			        DimTicket[Ticket Class] = "Advance"
+			    )
+			VAR _CountDays =
+			    CALCULATE(
+			        COUNTROWS(Railway), 
+			       DimTicket[Ticket Class] = "Advance"
+			
+			    )
+			RETURN
+			    IF(_CountDays = 0, 0, DIVIDE(_TotalDays, _CountDays))
+			```
+		lineageTag: 6ae520f7-9085-40d9-a0f3-d206d506244a
+
+		formatStringDefinition = "0.0 Days"
+
+	measure 'Average Revenue per Trip' =
+			
+			VAR _RevenuePerTripTable =
+			    SUMMARIZE(
+			        Railway,
+			        Railway[Date of Journey],
+			        Railway[Departure Time],
+			        Railway[Route],
+			        "Cost",SUM(Railway[Price])
+			    )
+			VAR _Result =
+			    DIVIDE(SUMX(_RevenuePerTripTable, [Cost]), COUNTROWS(_RevenuePerTripTable))
+			RETURN
+			    _Result
+		formatString: "£"#,0.00;-"£"#,0.00;"£"#,0.00
+		lineageTag: afcdf928-63d6-4bb4-83d1-9c00f88c4272
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-GB"}
+
+	measure Sales_Y_Axis_Max = ```
+			
+			 [Sales_Monthly_Max] * 4.8
+			
+			```
+		lineageTag: 2439ab3b-761c-4fe8-b87f-2356517cf55f
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure Sales_Monthly_Max =
+			
+			CALCULATE(
+			    MAXX(
+			        ALLSELECTED('Date'[Month]),
+			        [Sales Label]
+			    ),
+			    REMOVEFILTERS('Date'[Month Name])
+			)
+		formatString: 0
+		lineageTag: 4af40a22-334d-457e-ba94-91e9d517d204
+
+	measure 'Sales Delta PM Line' =
+			
+			[Sales_Monthly_Max] * 3.8
+		lineageTag: 6dcf9aa7-8b93-467b-9f74-0fc7f71e5463
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Sales Delta PM Line 2' = [Sales Delta PM Line]
+		lineageTag: 18cdc6df-973d-4702-a374-74952b3710f1
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Sales Red Max (PM Line)' = ```
+			
+			VAR _Result =
+			    IF(
+			        [Ticket Sales] < [PM Ticket Sales], 
+			        [Sales Delta PM Line] + 
+			        (
+			            DIVIDE(
+			                ([Ticket Sales] - [PM Ticket Sales]), 
+			                [PM Ticket Sales]
+			            )*
+			            (DIVIDE(
+			                [Sales_Monthly_Max],
+			                CALCULATE(
+			                    MAXX(
+			                        ALLSELECTED('Date'[Month]),
+			                        DIVIDE(
+			                            ([Ticket Sales] - [PM Ticket Sales]), 
+			                            [PM Ticket Sales]
+			                        )
+			                    ),
+			                    REMOVEFILTERS('Date'[Month Name])
+			                )
+			            )
+			            *0.7
+			            )
+			        )
+			    )
+			RETURN
+			    _Result
+			```
+		formatString: "£"#,0;-"£"#,0;"£"#,0
+		lineageTag: 1add7558-8d71-49f7-b716-c9d8bfb68c19
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-GB"}
+
+	measure 'Sales Green Max (PM Line)' = ```
+			
+			VAR _Result =
+			    IF(
+			        [Ticket Sales] > [PM Ticket Sales], 
+			        [Sales Delta PM Line] + 
+			        (
+			            DIVIDE(
+			                ([Ticket Sales] - [PM Ticket Sales]), 
+			                [PM Ticket Sales]
+			            )*
+			            (DIVIDE(
+			                [Sales_Monthly_Max],
+			                CALCULATE(
+			                    MAXX(
+			                        ALLSELECTED('Date'[Month]),
+			                        DIVIDE(
+			                            ([Ticket Sales] - [PM Ticket Sales]), 
+			                            [PM Ticket Sales]
+			                        )
+			                    ),
+			                    REMOVEFILTERS('Date'[Month Name])
+			                )
+			            )
+			            *0.7
+			            )
+			        )
+			    )
+			RETURN
+			    _Result
+			```
+		lineageTag: 3d38b0ce-e149-4446-9ac3-439c639626bb
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Sales Percentage Label' = ```
+			
+			VAR _Result =
+			    IF(
+			        [Ticket Sales] < [PM Ticket Sales], 
+			        ([Sales Delta PM Line] *0.88)
+			            + 
+			        (
+			            DIVIDE(
+			                ([Ticket Sales] - [PM Ticket Sales]), 
+			                [PM Ticket Sales]
+			            )*
+			            (DIVIDE(
+			                [Sales_Monthly_Max],
+			                CALCULATE(
+			                    MAXX(
+			                        ALLSELECTED('Date'[Month]),
+			                        DIVIDE(
+			                            ([Ticket Sales] - [PM Ticket Sales]), 
+			                            [PM Ticket Sales]
+			                        )
+			                    ),
+			                    REMOVEFILTERS('Date'[Month Name])
+			                )
+			            )
+			            *0.7
+			            )
+			        ),
+			        ([Sales Delta PM Line])
+			            + 
+			        (
+			            DIVIDE(
+			                ([Ticket Sales] - [PM Ticket Sales]), 
+			                [PM Ticket Sales]
+			            )*
+			            (DIVIDE(
+			                [Sales_Monthly_Max],
+			                CALCULATE(
+			                    MAXX(
+			                        ALLSELECTED('Date'[Month]),
+			                        DIVIDE(
+			                            ([Ticket Sales] - [PM Ticket Sales]), 
+			                            [PM Ticket Sales]
+			                        )
+			                    ),
+			                    REMOVEFILTERS('Date'[Month Name])
+			                )
+			            )
+			            *0.7
+			            )
+			        )
+			    )
+			RETURN
+			    _Result
+			```
+		lineageTag: 8295b7c1-335c-4380-801e-c2273b5bebee
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Trip Label' =
+			
+			IF (
+			    [Passengers]> [PM Passengers],
+			    [Passengers],
+			    [PM Passengers]
+			)
+		formatString: 0
+		lineageTag: 4cf51ae9-53b7-4fc9-82ff-3d4e157296a7
+
+	measure 'Trips Green Max' = IF([Passengers] > [PM Passengers], [Trip Label])
+		formatString: 0
+		lineageTag: f6cc8cbc-06b7-4bdc-b05b-7b74f948d967
+
+	measure 'Trips Red Max' = IF([Passengers] < [PM Passengers], [Trip Label])
+		formatString: 0
+		lineageTag: 3edc87a5-66ba-4e0c-8ff2-423e7b6f8b6f
+
+	measure Trips_Monthly_Max =
+			
+			CALCULATE(
+			    MAXX(
+			        ALLSELECTED('Date'[Month]),
+			        [Trip Label]
+			    ),
+			    REMOVEFILTERS('Date'[Month Name])
+			)
+		formatString: 0
+		lineageTag: c20dfc8a-0f23-4497-b875-1440ef7e59ce
+
+	measure 'Trips Delta PM Line' =
+			
+			[Trips_Monthly_Max] * 3.8
+		lineageTag: c7c301e8-58ba-498a-af23-2fbb2dfde135
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure Trips_Y_Axis_Max = ```
+			
+			 [Trips_Monthly_Max] * 4.8
+			```
+		lineageTag: a9d0e331-9a6f-4f71-9025-6a0295dcb327
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Trips Delta PM Line 2' = [Trips Delta PM Line]
+		lineageTag: 38c3ffaf-bb0d-4412-a9b9-eada85a740f5
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Trips Green Max (PM Line)' = ```
+			
+			VAR _Result =
+			    IF(
+			        [Passengers] > [PM Passengers], 
+			        [Trips Delta PM Line] + 
+			        (
+			            DIVIDE(
+			                ([Passengers] - [PM Passengers]), 
+			                [PM Passengers]
+			            )*
+			            (DIVIDE(
+			                [Trips_Monthly_Max],
+			                CALCULATE(
+			                    MAXX(
+			                        ALLSELECTED('Date'[Month]),
+			                        DIVIDE(
+			                            ([Passengers] - [PM Passengers]), 
+			                            [PM Passengers]
+			                        )
+			                    ),
+			                    REMOVEFILTERS('Date'[Month Name])
+			                )
+			            )
+			            *0.7
+			            )
+			        )
+			    )
+			RETURN
+			    _Result
+			```
+		lineageTag: 446e962a-f48d-470b-b652-b275a56e4049
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Trips Red Max (PM Line)' = ```
+			
+			VAR _Result =
+			    IF(
+			        [Passengers] < [PM Passengers], 
+			        [Trips Delta PM Line] + 
+			        (
+			            DIVIDE(
+			                ([Passengers] - [PM Passengers]), 
+			                [PM Passengers]
+			            )*
+			            (DIVIDE(
+			                [Trips_Monthly_Max],
+			                CALCULATE(
+			                    MAXX(
+			                        ALLSELECTED('Date'[Month]),
+			                        DIVIDE(
+			                            ([Passengers] - [PM Passengers]), 
+			                            [PM Passengers]
+			                        )
+			                    ),
+			                    REMOVEFILTERS('Date'[Month Name])
+			                )
+			            )
+			            *0.7
+			            )
+			        )
+			    )
+			RETURN
+			    _Result
+			```
+		lineageTag: a27bcc81-09ba-44d9-b42f-28890a7607fb
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Trips Percentage Label' = ```
+			
+			VAR _Result =
+			    IF(
+			        [Passengers] < [PM Passengers], 
+			        ([Trips Delta PM Line] *0.88)
+			            + 
+			        (
+			            DIVIDE(
+			                ([Passengers] - [PM Passengers]), 
+			                [PM Passengers]
+			            )*
+			            (DIVIDE(
+			                [Trips_Monthly_Max],
+			                CALCULATE(
+			                    MAXX(
+			                        ALLSELECTED('Date'[Month]),
+			                        DIVIDE(
+			                            ([Passengers] - [PM Passengers]), 
+			                            [PM Passengers]
+			                        )
+			                    ),
+			                    REMOVEFILTERS('Date'[Month Name])
+			                )
+			            )
+			            *0.7
+			            )
+			        ),
+			        ([Trips Delta PM Line])
+			            + 
+			        (
+			            DIVIDE(
+			                ([Passengers] - [PM Passengers]), 
+			                [PM Passengers]
+			            )*
+			            (DIVIDE(
+			                [Trips_Monthly_Max],
+			                CALCULATE(
+			                    MAXX(
+			                        ALLSELECTED('Date'[Month]),
+			                        DIVIDE(
+			                            ([Passengers] - [PM Passengers]), 
+			                            [PM Passengers]
+			                        )
+			                    ),
+			                    REMOVEFILTERS('Date'[Month Name])
+			                )
+			            )
+			            *0.7
+			            )
+			        )
+			    )
+			RETURN
+			    _Result
+			```
+		lineageTag: d198dd6e-b628-463b-a950-e2688526be0b
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Threshold Header Text' =
+			
+			VAR _Option  = SELECTEDVALUE('Rank Table'[Rank Option], SELECTEDVALUE('Rank Table'[Rank Option]))
+			RETURN
+			FORMAT(COMBINEVALUES(" ", "Percentage of Total", _Option), " ")
+		lineageTag: 5e938831-196c-477a-87fc-a28f222b807b
+
+	measure 'Delay CF' =
+			
+			IF([Delayed Percentage] >0.3, "Red")
+		lineageTag: f4acc0cd-dfd6-4c9c-a7fe-2733e168e171
+
+	measure 'Cancellation CF' =
+			
+			IF([Cancellation Percentage] >0.07, "Red")
+		lineageTag: 2c0c448f-8a50-4ef9-8a76-dc5c332e6b18
+
+	measure 'Dynamic Measure' = ```
+			
+			VAR SelectedMeasure = SELECTEDVALUE('Sorting Options'[Measure Name])
+			VAR SelectedOrder = SELECTEDVALUE('Sorting Order'[Order])
+			VAR MeasureValue =
+			    SWITCH(
+			        SelectedMeasure,
+			        "Trips", [Number of Trips],
+			        "Cancelled Trips", [Cancelled Trips],
+			        "Delayed Trips", [Delayed Trips],
+			        "Cancelled %", [Cancellation Percentage],
+			        "Delayed %", [Delayed Percentage],
+			        "Avg Delay Time",[Average Delay Time],
+			        BLANK()
+			    )
+			RETURN
+			    IF(
+			        SelectedOrder = "⇩",
+			        MeasureValue,  
+			        -MeasureValue
+			    )
+			```
+		lineageTag: f722a31b-0950-40c3-819e-b0a056d02bf7
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Number of Trips' = ```
+			
+			VAR _TripTable =
+			    SUMMARIZE(
+			        Railway,
+			        Railway[Date of Journey],
+			        Railway[Departure Time],
+			        Railway[Route],
+			        "Cost",SUM(Railway[Price])
+			    )
+			RETURN 
+			 COUNTROWS(_TripTable)
+			```
+		formatString: #,0
+		lineageTag: bc87cef5-1705-4303-ba06-02cf0b592c80
+
+	measure 'Average Passengers per Trip' =
+			
+			VAR _TripTable =
+			    SUMMARIZE(
+			        Railway,
+			        Railway[Date of Journey],
+			        Railway[Departure Time],
+			        Railway[Route],
+			        "Count", COUNTROWS(Railway)
+			    )
+			VAR _Result =
+			    DIVIDE(SUMX(_TripTable, [Count]), COUNTROWS(_TripTable))
+			RETURN
+			    _Result
+		formatString: 0
+		lineageTag: 3673e2c0-b60d-458e-aa07-68fd8f5c9b4a
+
+		annotation PBI_FormatHint = {"isDecimal":true}
+
+	measure Actuals = 0
+		formatString: 0
+		lineageTag: b3c5d1a4-5720-45f8-9417-25bffd2174bd
+
+	measure PM = [Actuals]
+		formatString: 0
+		lineageTag: 2337bcea-cda5-4e43-bc14-1780c38aeaf1
+
+	partition _Measures = m
+		mode: import
+		source =
+				let
+				    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i44FAA==", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [Column1 = _t]),
+				    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Column1", type text}}),
+				    #"Removed Columns" = Table.RemoveColumns(#"Changed Type",{"Column1"})
+				in
+				    #"Removed Columns"
+
+	annotation PBI_ResultType = Table
+

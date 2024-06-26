@@ -1,0 +1,27 @@
+table 'Sorting Order'
+	lineageTag: 2afbbbb3-0d10-414e-a75e-6af13783d18e
+
+	column Order
+		dataType: string
+		lineageTag: cdabbac5-49d1-4bb8-a8e2-7833a5548111
+		summarizeBy: none
+		isNameInferred
+		isDataTypeInferred
+		sourceColumn: [Order]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Sorting Order' = calculated
+		mode: import
+		source =
+				
+				DATATABLE(
+				    "Order", STRING,
+				    {
+				        {"⇧"},
+				        {"⇩"}
+				    }
+				)
+
+	annotation PBI_Id = 513759b0b53b45159e0f5f8cf8cfa439
+

@@ -1,0 +1,28 @@
+table 'Top Routes'
+	lineageTag: ea645486-6d6a-4c48-83f6-d6652e5d27c3
+
+	measure 'Top Routes Value' = SELECTEDVALUE('Top Routes'[Top Routes], 5)
+		formatString: 0
+		lineageTag: 48973f8a-4ded-44c4-83bd-c705ff32d5f6
+
+	column 'Top Routes'
+		dataType: int64
+		formatString: 0
+		lineageTag: 993011ac-cef2-442c-8aa4-3ac1bf7a9306
+		summarizeBy: none
+		isDataTypeInferred
+		sourceColumn: [Value]
+
+		extendedProperty ParameterMetadata =
+				{
+				  "version": 0
+				}
+
+		annotation SummarizationSetBy = User
+
+	partition 'Top Routes' = calculated
+		mode: import
+		source = GENERATESERIES(5, 10, 5)
+
+	annotation PBI_Id = 9d73f0a43c414dd6afc87599ffbba958
+

@@ -1,0 +1,48 @@
+relationship AutoDetected_635a9ef5-2925-4e3b-ae81-91c3d9759159
+	fromColumn: Railway.'Purchase Means'
+	toColumn: DimPayment.'Purchase Means'
+
+relationship AutoDetected_3553dcfd-a130-4b30-9091-07fd1187bb14
+	fromColumn: Railway.Railcard
+	toColumn: DimRailCard.Railcard
+
+relationship AutoDetected_9fdda789-ecc3-4485-bb86-f090ddb52b9d
+	fromColumn: Railway.Ticket
+	toColumn: DimTicket.Ticket
+
+relationship AutoDetected_e5c002bd-8245-46e9-a6ee-bf28d6679b7e
+	fromColumn: Railway.Journey
+	toColumn: DimJourney.Journey
+
+relationship AutoDetected_5edc2a51-a71f-49a9-b012-8e91ecd52698
+	fromColumn: Railway.Route
+	toColumn: DimRoute.Route
+
+relationship 8767aecf-d93a-4fc3-9700-153084c3a338
+	isActive: false
+	fromColumn: Railway.'Time of Purchase'
+	toColumn: Time.'Time to the Minute'
+
+relationship 861b242b-4a71-4c3f-a848-c1c6d0f76f79
+	fromColumn: Railway.'Departure Time'
+	toColumn: Time.'Time to the Minute'
+
+relationship 60a6b8b9-b4a8-4178-b1c8-255539007ec6
+	isActive: false
+	fromColumn: Railway.'Arrival Time'
+	toColumn: Time.'Time to the Minute'
+
+relationship 95f45c0b-800a-4190-be82-35b1321c1610
+	isActive: false
+	fromColumn: Railway.'Actual Arrival Time'
+	toColumn: Time.'Time to the Minute'
+
+relationship 1e74dc5e-be48-4b47-a19e-0934ab1b4075
+	isActive: false
+	fromColumn: Railway.'Date of Purchase'
+	toColumn: Date.Date
+
+relationship 5e78f00e-958f-4dac-aee0-fa1afca66fd6
+	fromColumn: Railway.'Date of Journey'
+	toColumn: Date.Date
+

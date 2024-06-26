@@ -1,0 +1,38 @@
+model Model
+	culture: en-GB
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	discourageImplicitMeasures
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		fastCombine
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBIDesktopVersion = 2.129.1229.0 (24.05)
+
+annotation PBI_QueryOrder = ["Railway","Date","Time","DimPayment","DimRailCard","DimTicket","DimJourney","DimRoute","_Measures"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+annotation __TEdtr = 1
+
+ref table Railway
+ref table Date
+ref table Time
+ref table DimPayment
+ref table DimRailCard
+ref table DimTicket
+ref table DimJourney
+ref table DimRoute
+ref table 'Top Routes'
+ref table _Measures
+ref table TopBottom
+ref table Threshold
+ref table 'Rank Table'
+ref table 'Sorting Options'
+ref table 'Sorting Order'
+
+ref cultureInfo en-GB
+

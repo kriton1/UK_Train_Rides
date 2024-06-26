@@ -1,0 +1,204 @@
+table Date
+	lineageTag: d574979d-59d0-4b9b-9397-4e659b983b85
+	dataCategory: Time
+
+	column Date
+		dataType: dateTime
+		isKey
+		formatString: Long Date
+		lineageTag: 06df7311-2ef7-46b2-8b51-1fa0cd91592e
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: 30036b77-40af-475d-8f34-18fc91cf72f2
+		summarizeBy: none
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = Automatic
+
+	column Month
+		dataType: int64
+		formatString: 0
+		lineageTag: e13375f5-0a6c-4556-a5d2-b30995354f53
+		summarizeBy: none
+		sourceColumn: Month
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'End of Week'
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: dc14a8ac-f2f9-48b9-bc1b-af7a808db4ac
+		summarizeBy: none
+		sourceColumn: End of Week
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'End of Month'
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 16b4adad-34d7-4826-ac4b-53d7b8ac00ec
+		summarizeBy: none
+		sourceColumn: End of Month
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Day Name'
+		dataType: string
+		lineageTag: fcca2e9d-d663-4eec-a7be-a83c20af0912
+		summarizeBy: none
+		sourceColumn: Day Name
+		sortByColumn: 'Day of Week'
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Day of Week'
+		dataType: int64
+		formatString: 0
+		lineageTag: 993dc5e4-1f97-4418-b10a-9134dd5f7923
+		summarizeBy: none
+		sourceColumn: Day of Week
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Month Name'
+		dataType: string
+		lineageTag: 3c2f669f-53b7-44ec-ab92-d16470ec9b4d
+		summarizeBy: none
+		sourceColumn: Month Name
+		sortByColumn: Month
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quarter
+		dataType: string
+		lineageTag: 28354c14-0abe-4b23-9da4-e6930721ce1e
+		summarizeBy: none
+		sourceColumn: Quarter
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Holiday Flag'
+		dataType: string
+		lineageTag: 1e4577ac-28a5-4b4b-8588-6ecfa502abed
+		summarizeBy: none
+		sourceColumn: Holiday Flag
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Date = m
+		mode: import
+		source = ```
+				let
+				  DateTable = 
+				    let
+				      // Load the start date
+				      StartDate = List.Min(#"Railway"[Date of Purchase]),
+				      
+				      // Create a list of dates from the start date until today
+				      DateList = List.Dates(StartDate, Number.From(List.Max(#"Railway"[Date of Journey])) - Number.From(StartDate)+1, #duration(1,0,0,0)),
+				      
+				      // Convert the list to columnar table
+				      ListToTable = Table.FromList(DateList, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+				      
+				      // Transform the type of date column to Date
+				      DataTypeToDate = Table.TransformColumnTypes(ListToTable,{{"Column1", type date}}),
+				      
+				      // Rename the column name from "Column1" to "Date"
+				      RenameDateColumn = Table.RenameColumns(DataTypeToDate,{{"Column1", "Date"}}),
+				      
+				      // Add "Year" column
+				      AddYearColumn = Table.AddColumn(RenameDateColumn, "Year", each Date.Year([Date]), Int64.Type),
+				      
+				      // Add "Month" column
+				      AddMonthColumn = Table.AddColumn(AddYearColumn, "Month", each Date.Month([Date]), Int64.Type),
+				      
+				      // Add "End of Week" column with Friday as the end of the week
+				      AddWeekEndColumn = Table.AddColumn(AddMonthColumn, "End of Week", each Date.EndOfWeek([Date], 6), type date),
+				      
+				      // Add "End of Month" column
+				      AddMonthEndColumn = Table.AddColumn(AddWeekEndColumn, "End of Month", each Date.EndOfMonth([End of Week]), type date),
+				      
+				      // Add "Day Name" column
+				      AddDayNameColumn = Table.AddColumn(AddMonthEndColumn, "Day Name", each Date.DayOfWeekName([Date]), type text),
+				      
+				      // Add "Day of Week" column
+				      AddDayOfWeekColumn = Table.AddColumn(AddDayNameColumn, "Day of Week", each Date.DayOfWeek([Date]), Int64.Type),
+				      
+				      // Add "Month Name" column
+				      AddMonthNameColumn = Table.AddColumn(AddDayOfWeekColumn, "Month Name", each Date.MonthName([Date]), type text),
+				      
+				      // Add "Quarter" column
+				      AddQuarterColumn = Table.AddColumn(AddMonthNameColumn, "Quarter", each "Q" & Text.From(Date.QuarterOfYear([Date])), type text)
+				    in
+				      AddQuarterColumn,
+				      
+				  // Start of the PublicHolidayTable creation   
+				  PublicHolidayTable = 
+				    let
+				      // Fetch public holiday data from UK Government's API
+				      Source = Json.Document(Web.Contents("https://www.gov.uk/bank-holidays.json")),  
+				      // Convert the record to list
+				      ConvertToList = Record.ToList(Source),
+				      
+				      // Convert the list to a table
+				      ConvertToTable = Table.FromRecords(ConvertToList),
+				      
+				      // Change column types
+				      ChangeType = Table.TransformColumnTypes(ConvertToTable, {{"division", type text}, {"events", type any}}),
+				      
+				      // Navigate to events and create a new table
+				      EventsTable = ChangeType{0}[events],
+				      ConvertToList1 = Table.FromList(EventsTable, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+				      
+				      // Expand nested columns
+				      ExpandTable = Table.ExpandRecordColumn(ConvertToList1, "Column1", {"title", "date", "notes", "bunting"}, {"title", "date", "notes", "bunting"}),
+				      
+				      // Remove unnecessary columns
+				      RemoveColumns = Table.RemoveColumns(ExpandTable, {"bunting", "notes"}),
+				      
+				      // Rename "date" field to "Date" for merging with Date table
+				      RenameColumns = Table.RenameColumns(RemoveColumns, {{"date", "Date"}}),
+				      
+				      // Change the type of title column to Date
+				      ChangedType = Table.TransformColumnTypes(RenameColumns, {{"title", type text},{"Date", type date}})
+				    in
+				      ChangedType,  
+				  
+				  // Merging DateTable and PublicHolidayTable
+				  MergeTables = 
+				    Table.NestedJoin(DateTable,{"Date"},PublicHolidayTable,{"Date"},"NewColumn",JoinKind.LeftOuter),
+				    
+				  // Expand NewColumn to show the title column
+				  ExpandNewColumn = 
+				    Table.ExpandTableColumn(MergeTables, "NewColumn", {"title"}, {"title"}),
+				    
+				  // Add additional custom column for Holiday Flag 
+				  AddCustom = 
+				    Table.AddColumn(ExpandNewColumn, "Holiday Flag", each if [title] = null then "No Holiday" else "Holiday", type text),
+				    
+				  // Remove extra "title" column from the result
+				  RemovedTitle = Table.RemoveColumns(AddCustom, {"title"})
+				in
+				    RemovedTitle
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

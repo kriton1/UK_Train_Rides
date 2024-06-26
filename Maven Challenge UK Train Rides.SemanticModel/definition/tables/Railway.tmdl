@@ -1,0 +1,204 @@
+table Railway
+	lineageTag: 259e8c8c-f6ea-4e9d-bf58-3204d3559b5d
+
+	column 'Transaction ID'
+		dataType: string
+		lineageTag: 3499555f-d949-4f95-a4f3-f38902f31963
+		summarizeBy: none
+		sourceColumn: Transaction ID
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Date of Purchase'
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 2fd17c9c-0efc-4b5a-9006-16baeb1db8a6
+		summarizeBy: none
+		sourceColumn: Date of Purchase
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Time of Purchase'
+		dataType: dateTime
+		formatString: Long Time
+		lineageTag: b7d98dd7-0703-468c-b821-493ad9107091
+		summarizeBy: none
+		sourceColumn: Time of Purchase
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+	column 'Purchase Means'
+		dataType: string
+		isHidden
+		lineageTag: 6cd5d93e-66c9-4bec-98ac-4a34b6c77a51
+		summarizeBy: none
+		sourceColumn: Purchase Means
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Railcard
+		dataType: string
+		isHidden
+		lineageTag: a593f79f-027f-4458-aa2d-61402f55bead
+		summarizeBy: none
+		sourceColumn: Railcard
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Ticket
+		dataType: string
+		lineageTag: 4123cc54-7849-42ad-9d8b-23f4e1b9463b
+		summarizeBy: none
+		sourceColumn: Ticket
+
+		annotation SummarizationSetBy = Automatic
+
+	column Price
+		dataType: int64
+		formatString: "£"#,0.00;-"£"#,0.00;"£"#,0.00
+		lineageTag: fff07b57-2c35-4ee1-be8f-89f7671d126a
+		summarizeBy: sum
+		sourceColumn: Price
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-GB"}
+
+	column 'Departure Station'
+		dataType: string
+		lineageTag: 43d959c1-1131-438f-af7d-37ffb158757b
+		dataCategory: Place
+		summarizeBy: none
+		sourceColumn: Departure Station
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Arrival Destination'
+		dataType: string
+		lineageTag: cee65ba5-689e-4681-a7d0-fe0aebdbfde4
+		dataCategory: Place
+		summarizeBy: none
+		sourceColumn: Arrival Destination
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Date of Journey'
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 2c53f9b3-af03-4675-bafa-63368f584002
+		summarizeBy: none
+		sourceColumn: Date of Journey
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Departure Time'
+		dataType: dateTime
+		formatString: Long Time
+		lineageTag: d896bde9-0c1c-4dad-b13c-89c3961017a8
+		summarizeBy: none
+		sourceColumn: Departure Time
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+	column 'Arrival Time'
+		dataType: dateTime
+		isHidden
+		formatString: Long Time
+		lineageTag: 25a8ac87-4d06-44e3-95c1-d46aa06b349b
+		summarizeBy: none
+		sourceColumn: Arrival Time
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+	column 'Actual Arrival Time'
+		dataType: dateTime
+		isHidden
+		formatString: Long Time
+		lineageTag: 6feee40f-1b7a-470c-9ac5-45a9b5c4153a
+		summarizeBy: none
+		sourceColumn: Actual Arrival Time
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+	column Journey
+		dataType: string
+		isHidden
+		lineageTag: ebd2d3df-3748-44ff-a431-8b1d32d484e6
+		summarizeBy: none
+		sourceColumn: Journey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Late Arrival Duration'
+		dataType: int64
+		lineageTag: d3d9a29f-6c73-49d8-a3eb-4640f8324080
+		summarizeBy: sum
+		sourceColumn: Late Arrival Duration
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Route
+		dataType: string
+		lineageTag: 9b228ff7-f708-47a5-aede-a9d950e2104a
+		summarizeBy: none
+		sourceColumn: Route
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Railway = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("G:\My Drive\Power BI Projects\UK Train Rides\Dataset\railway.csv"),[Delimiter=",", Columns=18, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    // To ensure that Signal failure and Signal Failure are the same
+				    #"Capitalized Each Word om the Reason for Delay Column" = Table.TransformColumns(#"Promoted Headers",{{"Reason for Delay", Text.Proper, type text}}),
+				    // In the Reason for Delay Column
+				    #"Replaced Weather with Weather Condtions" = Table.ReplaceValue(#"Capitalized Each Word om the Reason for Delay Column","Weather","Weather Conditions",Replacer.ReplaceValue,{"Reason for Delay"}),
+				    // In continuation of ensuring that values align
+				    #"Replaced Staffing with Staff Shortage" = Table.ReplaceValue(#"Replaced Weather with Weather Condtions","Staffing","Staff Shortage",Replacer.ReplaceValue,{"Reason for Delay"}),
+				    //Replace nulls with On -Time to ensure seamless filtering
+				    #"Replaced nulls with On Time" = Table.ReplaceValue(#"Replaced Staffing with Staff Shortage","","On Time",Replacer.ReplaceValue,{"Reason for Delay"}),
+				    //To get the duration by which trains that weren't on time were late
+				    #"Added a Late Arrival Duration Column" = Table.AddColumn(#"Replaced nulls with On Time", "Late Arrival Duration", each Number.IntegerDivide(Duration.TotalMinutes(Time.FromText([Actual Arrival Time]) - Time.FromText([Arrival Time])), 1)),
+				    //To increase performance since the seconds component is not really important for analysis
+				    #"Chopped off the second components in the three time columns" = Table.TransformColumns(#"Added a Late Arrival Duration Column", {{"Time of Purchase", each Text.BeforeDelimiter(_, ":", 1), type text}, {"Departure Time", each Text.BeforeDelimiter(_, ":", 1), type text}, {"Arrival Time", each Text.BeforeDelimiter(_, ":", 1), type text}, {"Actual Arrival Time", each Text.BeforeDelimiter(_, ":", 1), type text}}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Chopped off the second components in the three time columns",{{"Transaction ID", type text}, {"Date of Purchase", type date}, {"Time of Purchase", type time}, {"Purchase Type", type text}, {"Payment Method", type text}, {"Railcard", type text}, {"Ticket Class", type text}, {"Ticket Type", type text}, {"Price", Int64.Type}, {"Departure Station", type text}, {"Arrival Destination", type text}, {"Date of Journey", type date}, {"Departure Time", type time}, {"Arrival Time", type time}, {"Actual Arrival Time", type time}, {"Journey Status", type text}, {"Reason for Delay", type text}, {"Refund Request", type text}, {"Late Arrival Duration", Int64.Type}}),
+				    #"Merged Purchase Type and Payment Method" = Table.CombineColumns(#"Changed Type",{"Purchase Type", "Payment Method"},Combiner.CombineTextByDelimiter(" ", QuoteStyle.None),"Purchase Means"),
+				    #"Merged Ticket Class and Ticket Type" = Table.CombineColumns(#"Merged Purchase Type and Payment Method",{"Ticket Class", "Ticket Type"},Combiner.CombineTextByDelimiter(" ", QuoteStyle.None),"Ticket"),
+				    #"Merged Journey Status, Reason for Delay and Refund" = Table.CombineColumns(#"Merged Ticket Class and Ticket Type",{"Journey Status", "Reason for Delay", "Refund Request"},Combiner.CombineTextByDelimiter(" ", QuoteStyle.None),"Journey"),
+				    #"Added Custom" = Table.AddColumn(#"Merged Journey Status, Reason for Delay and Refund", "Route", each [Departure Station] & " - " &[Arrival Destination], type text)
+				in
+				    #"Added Custom"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

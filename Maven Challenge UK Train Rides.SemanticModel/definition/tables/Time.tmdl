@@ -1,0 +1,113 @@
+table Time
+	lineageTag: e03ff04f-079f-4c37-b233-5d99de2361b6
+
+	column Minutes
+		dataType: int64
+		formatString: 0
+		lineageTag: 47b82dcc-b1f5-4559-9a3e-9566325ae8a5
+		summarizeBy: none
+		sourceColumn: Minutes
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Time to the Minute'
+		dataType: dateTime
+		formatString: Long Time
+		lineageTag: de00299d-b3d8-44fb-bed0-512f3b9c63c9
+		summarizeBy: none
+		sourceColumn: Time to the Minute
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+	column '30 mins bucket'
+		dataType: int64
+		formatString: 0
+		lineageTag: 58be1b3d-c5a7-4dc1-9812-bd851ea7634d
+		summarizeBy: none
+		sourceColumn: 30 mins bucket
+
+		annotation SummarizationSetBy = Automatic
+
+	column '30 mins time slot'
+		dataType: dateTime
+		formatString: h:nn
+		lineageTag: a6e9f8ae-7add-4c88-8087-3ff9efcdaadb
+		summarizeBy: none
+		sourceColumn: 30 mins time slot
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+		annotation PBI_FormatHint = {"isDateTimeCustom":true}
+
+	column '1 hour bucket'
+		dataType: int64
+		formatString: 0
+		lineageTag: 23d5fc59-c28b-437b-ab51-1fb6c491a0f4
+		summarizeBy: none
+		sourceColumn: 1 hour bucket
+
+		annotation SummarizationSetBy = Automatic
+
+	column '1 hour time slot'
+		dataType: dateTime
+		formatString: h:nn
+		lineageTag: ff79b4e8-e660-4c5b-b372-1232393c548b
+		summarizeBy: none
+		sourceColumn: 1 hour time slot
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+		annotation PBI_FormatHint = {"isDateTimeCustom":true}
+
+	column 'Formatted Time'
+		dataType: string
+		lineageTag: d93fdb31-4052-49a8-bc0b-6bde7174178a
+		summarizeBy: none
+		sourceColumn: Formatted Time
+		sortByColumn: '1 hour time slot'
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Time = m
+		mode: import
+		source =
+				let
+				    Source = {0..1439},
+				    #"Converted to Table" = Table.FromList(Source, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+				    #"Renamed Columns" = Table.RenameColumns(#"Converted to Table",{{"Column1", "Minutes"}}),
+				    #"Changed Type1" = Table.TransformColumnTypes(#"Renamed Columns",{{"Minutes", Int64.Type}}),
+				    #"Inserted Division" = Table.AddColumn(#"Changed Type1", "Time to the Minute", each [Minutes] / 1440, type number),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Inserted Division",{{"Time to the Minute", type time}}),
+				    #"Inserted Integer-Division" = Table.AddColumn(#"Changed Type", "30 mins bucket", each Number.IntegerDivide([Minutes], 30), Int64.Type),
+				    #"Added Custom" = Table.AddColumn(#"Inserted Integer-Division", "30 mins time slot", each [30 mins bucket]*30/1440),
+				    #"Changed Type2" = Table.TransformColumnTypes(#"Added Custom",{{"30 mins time slot", type time}}),
+				    #"Inserted Integer-Division1" = Table.AddColumn(#"Changed Type2", "1 hour bucket", each Number.IntegerDivide([Minutes], 60), Int64.Type),
+				    #"Added Custom1" = Table.AddColumn(#"Inserted Integer-Division1", "1 hour time slot", each [1 hour bucket]*60/1440),
+				    #"Changed Type3" = Table.TransformColumnTypes(#"Added Custom1",{{"1 hour time slot", type time}}),
+				    #"Added Custom Column" = Table.AddColumn(#"Changed Type3", "Formatted Time", each
+				    let
+				        Hour = Time.Hour([1 hour time slot]),
+				        Minute = Time.Minute([1 hour time slot]),
+				        Second = Time.Second([1 hour time slot]),
+				        TwelveHour = if Hour = 0 then 12 else if Hour > 12 then Hour - 12 else Hour,
+				        AmPm = if Hour < 12 then "am" else "pm",
+				        FormattedMinuteSecond = if Minute = 0 and Second = 0 then "" else ":" & Text.PadStart(Text.From(Minute), 2, "0") & ":" & Text.PadStart(Text.From(Second), 2, "0")
+				    in
+				        Text.From(TwelveHour) & FormattedMinuteSecond & AmPm,
+				    type text),
+				    #"Filtered Rows" = Table.SelectRows(#"Added Custom Column", each true)
+				in
+				    #"Filtered Rows"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

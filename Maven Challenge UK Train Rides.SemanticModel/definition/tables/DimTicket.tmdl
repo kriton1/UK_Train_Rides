@@ -1,0 +1,43 @@
+table DimTicket
+	lineageTag: cc192b5e-fbac-4f6e-ad6d-aa18909bc0c4
+
+	column Ticket
+		dataType: string
+		lineageTag: 17e56bbd-adcf-4305-aa2f-22ccc18d58ca
+		summarizeBy: none
+		sourceColumn: Ticket
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Ticket Type'
+		dataType: string
+		lineageTag: 7519e152-9a21-4c58-b644-59f2b46607d6
+		summarizeBy: none
+		sourceColumn: Ticket Type
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Ticket Class'
+		dataType: string
+		lineageTag: ebf1becb-176e-42d3-ad50-eda9a15ca8ba
+		summarizeBy: none
+		sourceColumn: Ticket Class
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimTicket = m
+		mode: import
+		source =
+				let
+				    Source = Railway,
+				    #"Removed Other Columns" = Table.SelectColumns(Source,{"Ticket"}),
+				    #"Removed Duplicates" = Table.Distinct(#"Removed Other Columns"),
+				    #"Inserted Text Before Delimiter" = Table.AddColumn(#"Removed Duplicates", "Ticket Type", each Text.BeforeDelimiter([Ticket], " ", {0, RelativePosition.FromEnd}), type text),
+				    #"Inserted Text After Delimiter" = Table.AddColumn(#"Inserted Text Before Delimiter", "Ticket Class", each Text.AfterDelimiter([Ticket], " ", {0, RelativePosition.FromEnd}), type text)
+				in
+				    #"Inserted Text After Delimiter"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

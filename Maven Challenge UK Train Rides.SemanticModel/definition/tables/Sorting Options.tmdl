@@ -1,0 +1,33 @@
+table 'Sorting Options'
+	lineageTag: bf75a6ab-d5c0-4e21-bc6e-badcad9c3a5b
+
+	column 'Measure Name'
+		dataType: string
+		lineageTag: 01db3fbb-bfe2-4f15-abc8-d1edcd0cfa63
+		summarizeBy: none
+		isNameInferred
+		isDataTypeInferred
+		sourceColumn: [Measure Name]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Sorting Options' = calculated
+		mode: import
+		source = ```
+				
+				DATATABLE(
+				    "Measure Name", STRING,
+				    {
+				        {"Trips"},
+				        {"Cancelled Trips"},
+				        {"Delayed Trips"},
+				        {"Cancelled %"},
+				        {"Delayed %"},
+				        {"Avg Delay Time"}
+				    }
+				)
+				
+				```
+
+	annotation PBI_Id = 8f2d693903a048b98c73f5cdc6dc4481
+

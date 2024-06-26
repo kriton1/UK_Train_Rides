@@ -1,0 +1,43 @@
+table DimPayment
+	lineageTag: 91c32e5d-f838-4aeb-8fc8-cf91127f86c8
+
+	column 'Purchase Means'
+		dataType: string
+		lineageTag: a7021793-4bea-409a-9f1b-f300eb428dc7
+		summarizeBy: none
+		sourceColumn: Purchase Means
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Purchase Type'
+		dataType: string
+		lineageTag: f617e39f-3e31-4775-85ab-f224141befa6
+		summarizeBy: none
+		sourceColumn: Purchase Type
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Payment Method'
+		dataType: string
+		lineageTag: 7a92aeef-d204-48f3-99da-43821ea8dc32
+		summarizeBy: none
+		sourceColumn: Payment Method
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimPayment = m
+		mode: import
+		source =
+				let
+				    Source = Railway,
+				    #"Removed Other Columns" = Table.SelectColumns(Source,{"Purchase Means"}),
+				    #"Removed Duplicates" = Table.Distinct(#"Removed Other Columns"),
+				    #"Inserted Text Before Delimiter" = Table.AddColumn(#"Removed Duplicates", "Purchase Type", each Text.BeforeDelimiter([Purchase Means], " "), type text),
+				    #"Inserted Text After Delimiter" = Table.AddColumn(#"Inserted Text Before Delimiter", "Payment Method", each Text.AfterDelimiter([Purchase Means], " "), type text)
+				in
+				    #"Inserted Text After Delimiter"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

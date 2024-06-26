@@ -1,0 +1,18 @@
+table 'Rank Table'
+	lineageTag: f43f1b1b-fb0a-47e5-80bd-e91333bfd73a
+
+	column 'Rank Option'
+		dataType: string
+		lineageTag: 029a071c-f606-41d5-ac20-8f16388a9a47
+		summarizeBy: none
+		isDataTypeInferred
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Rank Table' = calculated
+		mode: import
+		source = {"Number of Passengers", "Ticket Sales", "Avg Revenue per Trip", "Number of Trips"}
+
+	annotation PBI_Id = b90187e5c8cf48ac80147d42239bee89
+

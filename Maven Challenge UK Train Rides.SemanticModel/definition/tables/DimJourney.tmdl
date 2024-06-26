@@ -1,0 +1,70 @@
+table DimJourney
+	lineageTag: 9ba5466a-a56d-4ef2-bf8e-f698e7d4c4ec
+
+	column Journey
+		dataType: string
+		lineageTag: 8c340f72-7da4-4632-a28a-bb3e20d73555
+		summarizeBy: none
+		sourceColumn: Journey
+
+		annotation SummarizationSetBy = Automatic
+
+	column Refund
+		dataType: string
+		lineageTag: edbdea59-3d59-423a-9682-12d092dd616d
+		summarizeBy: none
+		sourceColumn: Refund
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Journey Status'
+		dataType: string
+		lineageTag: 3989ea6f-ad60-4325-950d-b6e1d43040f2
+		summarizeBy: none
+		sourceColumn: Journey Status
+		sortByColumn: 'Status Order'
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Reason for Delay'
+		dataType: string
+		lineageTag: f8fb3a5d-4142-4001-b3f4-4952e6d85717
+		summarizeBy: none
+		sourceColumn: Reason for Delay
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Status Order'
+		dataType: int64
+		formatString: 0
+		lineageTag: 7db747d2-f019-4701-911d-6d5f38d7ee5d
+		summarizeBy: none
+		sourceColumn: Status Order
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimJourney = m
+		mode: import
+		source =
+				let
+				    Source = Railway,
+				    #"Removed Other Columns" = Table.SelectColumns(Source,{"Journey"}),
+				    #"Removed Duplicates" = Table.Distinct(#"Removed Other Columns"),
+				    #"Inserted Text After Delimiter" = Table.AddColumn(#"Removed Duplicates", "Refund", each Text.AfterDelimiter([Journey], " ", {0, RelativePosition.FromEnd}), type text),
+				    #"Inserted Text Before Delimiter" = Table.AddColumn(#"Inserted Text After Delimiter", "Journey Status", each Text.BeforeDelimiter([Journey], " "), type text),
+				    #"Replaced Value" = Table.ReplaceValue(#"Inserted Text Before Delimiter","On","On Time",Replacer.ReplaceValue,{"Journey Status"}),
+				    #"Inserted Text After Delimiter1" = Table.AddColumn(#"Replaced Value", "Reason for Delay", each Text.BeforeDelimiter([Journey], " ", 2), type text),
+				    #"Extracted Text After Delimiter" = Table.TransformColumns(#"Inserted Text After Delimiter1", {{"Reason for Delay", each Text.AfterDelimiter(_, " ", 0), type text}}),
+				    #"Replaced Value1" = Table.ReplaceValue(#"Extracted Text After Delimiter","Time On","On Time",Replacer.ReplaceText,{"Reason for Delay"}),
+				    #"Replaced Value2" = Table.ReplaceValue(#"Replaced Value1","Traffic Yes","Traffic",Replacer.ReplaceValue,{"Reason for Delay"}),
+				    #"Replaced Value3" = Table.ReplaceValue(#"Replaced Value2","Traffic No","Traffic",Replacer.ReplaceValue,{"Reason for Delay"}),
+				    #"Added Conditional Column" = Table.AddColumn(#"Replaced Value3", "Status Order", each if Text.Contains([Journey Status], "On Time") then 0 else if Text.Contains([Journey Status], "Delayed") then 1 else 2, Int64.Type)
+				in
+				    #"Added Conditional Column"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

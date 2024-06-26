@@ -1,0 +1,28 @@
+table Threshold
+	lineageTag: b5ee9fd5-de70-4a15-aaec-150620de48b2
+
+	measure 'Threshold Value' = SELECTEDVALUE('Threshold'[Threshold], 0.01)
+		formatString: 0%;-0%;0%
+		lineageTag: 6adbdc58-5161-4b74-9597-8c3637eeace2
+
+	column Threshold
+		dataType: double
+		formatString: 0%;-0%;0%
+		lineageTag: 8a72dc3c-a58a-4c25-9ed5-5e7f2b8e17e3
+		summarizeBy: none
+		isDataTypeInferred
+		sourceColumn: [Value]
+
+		extendedProperty ParameterMetadata =
+				{
+				  "version": 0
+				}
+
+		annotation SummarizationSetBy = User
+
+	partition Threshold = calculated
+		mode: import
+		source = GENERATESERIES(0.00, 1.002, 0.01)
+
+	annotation PBI_Id = 186d67ce5f9946cd931828b41439592f
+
