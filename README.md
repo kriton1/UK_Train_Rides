@@ -4,7 +4,7 @@
 
 Interact it with it here: [Interactive Link](https://app.powerbi.com/view?r=eyJrIjoiYmQ1YjQyOWItNTNkYy00ODczLTgyNzEtOTUzMGFlYWVkNjU1IiwidCI6Ijg1MDVlMDMxLWI2MDktNDU4YS1hMGRhLTE5NTFiMzNmOWU3YSIsImMiOjh9)
 
-This is the entry for the Challenge: [Maven Analytics Showcase](https://mavenanalytics.io/project/15278)
+
 
 ## About This Project
 
